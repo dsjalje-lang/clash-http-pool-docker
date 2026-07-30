@@ -1,0 +1,4 @@
+data/ports.json
+data/ports.csv
+secrets/*.txt
+!secrets/.gitkeep

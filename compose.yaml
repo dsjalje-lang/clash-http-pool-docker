@@ -1,0 +1,48 @@
+name: clash-http-pool
+
+services:
+  proxy-pool:
+    build:
+      context: .
+      args:
+        MIHOMO_VERSION: v1.19.29
+    image: local/clash-http-pool:v1
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      SUBSCRIPTION_URL_FILE: /run/secrets/subscription_url
+      HTTP_USERNAME_FILE: /run/secrets/http_username
+      HTTP_PASSWORD_FILE: /run/secrets/http_password
+      PORT_START: "18000"
+      MAX_PROXIES: "128"
+      UPDATE_INTERVAL_SECONDS: "3600"
+      LISTEN_ADDRESS: "0.0.0.0"
+      # NODE_FILTER: "US|JP|SG"
+    ports:
+      - "18000-18127:18000-18127"
+    volumes:
+      - ./data:/data
+    tmpfs:
+      - /run/mihomo:mode=0750
+    secrets:
+      - subscription_url
+      - http_username
+      - http_password
+    healthcheck:
+      test: ["CMD-SHELL", "test -s /run/mihomo/mihomo.pid && kill -0 $(cat /run/mihomo/mihomo.pid)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+secrets:
+  subscription_url:
+    file: ./secrets/subscription_url.txt
+  http_username:
+    file: ./secrets/http_username.txt
+  http_password:
+    file: ./secrets/http_password.txt
