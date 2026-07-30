@@ -1,4 +1,6 @@
 data/ports.json
 data/ports.csv
 secrets/*.txt
+__pycache__/
+.env
 !secrets/.gitkeep

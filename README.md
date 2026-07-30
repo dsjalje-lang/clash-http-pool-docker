@@ -1,14 +1,20 @@
 # Clash HTTP Pool
 
-This single Docker service reads a Clash YAML subscription and exposes each
-proxy as a separate authenticated HTTP proxy port. Every generated listener
-sets Mihomo's `proxy` field directly, so traffic on a port always uses its
-assigned proxy and does not follow the subscription's rules.
+This single Docker service reads a subscription and exposes each proxy as a
+separate authenticated HTTP proxy port. Every generated listener sets Mihomo's
+`proxy` field directly, so traffic on a port always uses its assigned proxy and
+does not follow the subscription's rules.
 
-The supplied subscription must be a Clash YAML document with a top-level
-`proxies` array. URI-only subscriptions and `proxy-providers`-only documents
-are intentionally rejected because they do not provide a stable complete node
-list for port generation.
+Supported subscription inputs are a Clash YAML document with a top-level
+`proxies` array, or a Shadowrocket-style Base64 subscription containing
+`ss://` or `anytls://` links. URI-only subscriptions using other schemes and
+`proxy-providers`-only documents are intentionally rejected because they do
+not provide a supported complete node list for port generation.
+
+Shadowrocket URI lists may include `STATUS=` and `REMARKS=` metadata lines;
+these are ignored. The default request headers match Shadowrocket build 3131,
+including `Accept-Encoding: identity` and `Connection: close`, so compatible
+subscription services return their full Shadowrocket node set.
 
 ## Start
 
@@ -60,9 +66,22 @@ first start when needed:
 | `UPDATE_INTERVAL_SECONDS` | `3600` | Subscription refresh interval. |
 | `NODE_FILTER` | empty | Optional regular expression that selects nodes by name. |
 | `LISTEN_ADDRESS` | `0.0.0.0` | Address used inside the container. |
+| `SUBSCRIPTION_USER_AGENT` | Shadowrocket/3131...iPhone16,2 | User-Agent sent while downloading the subscription. |
+| `SUBSCRIPTION_HEADERS` | empty | JSON object of additional request headers. |
 
 When changing `PORT_START` or `MAX_PROXIES`, also change the published port
 range in `compose.yaml` to match.
+
+Some providers use private request headers to choose the returned node set. Set
+`SUBSCRIPTION_HEADERS` in an untracked `.env` file when required. For example:
+
+```text
+SUBSCRIPTION_HEADERS={"X-Subscription-Token":"replace-me","Cookie":"replace-me"}
+```
+
+The value may also be supplied through `SUBSCRIPTION_HEADERS_FILE`, whose file
+contents must be the same JSON object. This is suitable for a mounted Docker
+secret or another host-managed secret file.
 
 ## Security
 
